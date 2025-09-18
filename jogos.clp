@@ -131,13 +131,27 @@
   ?jogo <- (Jogo (nome ?nome) (tipo carta) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))))
   =>
   (assert (Recomendacao (jogo ?nome) (motivo "Perfeito para viagens: jogo de cartas, portatil e para pequenos grupos"))))
-
-; Familia com crianças
+  
+; Em familia
 (defrule recomendar-familia
   (Contexto (nome familia))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(and (member facil ?cat) (member infantil ?cat))) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))))
+  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member infantil ?cat) (member cooperativo ?cat))) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))) (tempo rapido))
   =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Otimo para familias com crianças: facil, divertido e adequado para todas as idades"))))
+  (assert (Recomendacao (jogo ?nome) (motivo "Ideal para familia: facil de aprender, cooperativo e rapido"))))
+
+; Jogos com criancas
+(defrule recomendar-criancas
+  (Contexto (nome com-criancas))
+  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member infantil ?cat) (member cooperativo ?cat))) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))) (tempo rapido))
+  =>
+  (assert (Recomendacao (jogo ?nome) (motivo "Ideal para criancas: facil de aprender, cooperativo e rapido"))))
+
+; Sala de espera
+(defrule recomendar-sala-espera
+  (Contexto (nome sala-de-espera))
+  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member cooperativo ?cat) (member estrategia ?cat))) (participantes $?part&:(or (member 1 ?part) (member 2-3 ?part) (member 4-5 ?part))) (tempo longo))
+  =>
+  (assert (Recomendacao (jogo ?nome) (motivo "Bom para sala de espera: permite jogar sozinho ou em pequenos grupos, com duracao longa"))))
 
 ; Jogar sozinho
 (defrule recomendar-sozinho
@@ -145,13 +159,6 @@
   ?jogo <- (Jogo (nome ?nome) (participantes $?part&:(member 1 ?part)))
   =>
   (assert (Recomendacao (jogo ?nome) (motivo "Permite jogar sozinho: modo solo disponivel"))))
-
-; Estrategia
-(defrule recomendar-estrategia
-  (Contexto (nome estrategia))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(member estrategia ?cat)) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Para mentes estrategicas: jogo desafiador que exige planejamento"))))
 
 ; ==============================
 ; MOSTRAR RECOMENDAÇÕES
