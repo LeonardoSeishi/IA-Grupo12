@@ -19,7 +19,7 @@
 ;;; =============================== ;;;
 
 (defrule GetJogosOnline
-    (declare (salience 9))
+    (declare (salience 5))
    =>
     (printout t "Qual seu video game preferido?" crlf)
     (printout t "1 - Tony Hawk" crlf)
@@ -57,7 +57,7 @@
 )
 
 (defrule GetBudget
-    (declare (salience 9))
+    (declare (salience 8))
     =>
     (printout t "Quanto você está disposto a gastar?" crlf)
     (printout t "1 - Baixo" crlf)
@@ -73,7 +73,7 @@
 )
 
 (defrule GetAreaEstudos
-    (declare (salience 9))
+    (declare (salience 5))
     =>
     (printout t "Qual sua área de estudo?" crlf)
     (printout t "1 - Exatas" crlf)
@@ -96,116 +96,116 @@
 ;;; =============================== ;;;
 
 (defrule Damas
-	(Preferencias (ambiente calmo))
+	(and(Preferencias (ambiente calmo))
     (Preferencias (budget baixo))
-    (Preferencias (area_estudo biologicas))
+    (Preferencias (area_estudo biologicas)))
 	=>
 	(assert (Jogo (nome Damas)))
 	(printout t "Jogo sugerido: Damas. Excelente para relaxar e desenvolver raciocínio lógico." crlf )
 )
 
 (defrule Xadrez
-	(Preferencias (ambiente calmo))
+	(and(Preferencias (ambiente calmo))
     (Preferencias (budget baixo))
-    (Preferencias (area_estudo exatas))
+    (Preferencias (area_estudo exatas)))
 	=>
 	(assert (Jogo (nome Xadrez)))
 	(printout t "Jogo sugerido: Xadrez. Um clássico que estimula a mente e a estratégia." crlf)
 )
 
 (defrule PalavraCruzada
-	(Preferencias (video_game tony_hawk))
+	(and(Preferencias (video_game tony_hawk))
     (Preferencias (ambiente calmo))
-    (Preferencias (budget baixo))
+    (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome PalavraCruzada)))
 	(printout t "Jogo sugerido: Palavra Cruzada. Ótimo para exercitar o vocabulário e a mente." crlf)
 )
 
 (defrule Resta1
-	(Preferencias (video_game god_of_war))
+	(and (Preferencias (video_game god_of_war))
     (Preferencias (ambiente calmo))
-    (Preferencias (budget baixo))
+    (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome Resta1)))
 	(printout t "Jogo sugerido: Resta 1. Excelente para relaxar e desenvolver raciocínio lógico." crlf)
 )
 
 (defrule War
-  (Preferencias (video_game god_of_war)) 
+  (and (Preferencias (video_game god_of_war)) 
   (Preferencias (budget alto))
   (or (Preferencias (area_estudo humanas)) 
-      (Preferencias (area_estudo exatas)))
+      (Preferencias (area_estudo exatas))))
   =>
   (assert (Jogo (nome War)))
   (printout t "Jogo sugerido: War. Um clássico de estratégia e conquista." crlf)
 )
 
 (defrule TheMind
-	(Preferencias (video_game mario_kart))
+	and ((Preferencias (video_game mario_kart))
     (Preferencias (ambiente animado))
     (or (Preferencias (budget baixo))
         (Preferencias (area_estudo humanas))
-        (Preferencias (area_estudo biologicas)))
+        (Preferencias (area_estudo biologicas))))
 	=>
 	(assert (Jogo (nome TheMind)))
 	(printout t "Jogo sugerido: The Mind. Um jogo cooperativo que desafia a intuição e a comunicação." crlf)
 )
 
 (defrule ExplodingKittens
-	(Preferencias (video_game mario_kart))
+	and((Preferencias (video_game mario_kart))
     (Preferencias (ambiente animado))
     (Preferencias (budget baixo))
     (or (Preferencias (area_estudo humanas)) 
-        (Preferencias (area_estudo biologicas)))
+        (Preferencias (area_estudo biologicas))))
 	=>
 	(assert (Jogo (nome ExplodingKittens)))
 	(printout t "Jogo sugerido: Exploding Kittens. Um jogo de cartas para se divertir com amigos." crlf )
 )
 
 (defrule Hanabi
-	(Preferencias (ambiente calmo))
+	and((Preferencias (ambiente calmo))
     (Preferencias (area_estudo exatas))
-    (Preferencias (video_game mortal_kombat))
+    (Preferencias (video_game mortal_kombat)))
 	=>
 	(assert (Jogo (nome Hanabi)))
 	(printout t "Jogo sugerido: Hanabi. Explore a cooperação e a comunicação em equipe." crlf)
 )
 
 (defrule Codenames
-	(Preferencias (video_game tony_hawk))
+	(and(Preferencias (video_game tony_hawk))
     (Preferencias (ambiente animado))
-    (Preferencias (budget baixo))
+    (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome Codenames)))
 	(printout t "Jogo sugerido: Codenames. Um jogo de palavras e dedução para grupos." crlf)
 )
 
 (defrule Operando
-	(Preferencias (video_game mario_kart))
+	(and(Preferencias (video_game mario_kart))
     (Preferencias (area_estudo biologicas))
     (Preferencias (ambiente animado))
-    (Preferencias (budget alto))
+    (Preferencias (budget alto)))
 	=>
 	(assert (Jogo (nome Operando)))
 	(printout t "Jogo sugerido: Operando. Teste sua habilidade e precisão com este jogo clássico." crlf)
 )
 
 (defrule Concept
-	(or (Preferencias (video_game tony_hawk))
+	(and(or (Preferencias (video_game tony_hawk))
         (Preferencias (area_estudo humanas)))
     (Preferencias (ambiente animado))
-    (Preferencias (budget alto))
+    (Preferencias (budget alto)))
 	=>
 	(assert (Jogo (nome Concept)))
 	(printout t "Jogo sugerido: Concept. Um jogo de adivinhação baseado em conceitos e associações." crlf)
 )
 
 (defrule Monopoly
-	(Preferencias (budget alto))
+	(and(Preferencias (budget alto))
     (Preferencias (ambiente animado))
     (or (Preferencias (area_estudo humanas)) 
-        (Preferencias (area_estudo exatas)))
+        (Preferencias (area_estudo exatas))))
 	=>
 	(assert (Jogo (nome Monopoly)))
 	(printout t "Jogo sugerido: Monopoly. O clássico jogo de compra e venda de propriedades." crlf)
@@ -218,6 +218,5 @@
 (defrule Fim
   (Jogo (nome ?jogo))
   =>
-  (printout t crlf crlf)
-  (printout t "O jogo sugerido é: " ?jogo crlf)
+  (printout t "O jogo sugerido é: " ?jogo crlf crlf)
 )
