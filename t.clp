@@ -182,9 +182,9 @@
 )
 
 (defrule Operando
-	(and(Preferencias (video_game mario_kart))
+	(and( or(Preferencias (video_game mario_kart))
+        (Preferencias (video_game tony_hawk)))
     (Preferencias (area_estudo biologicas))
-    (Preferencias (ambiente animado))
     (Preferencias (budget alto)))
 	=>
 	(assert (Jogo (nome Operando)))
@@ -217,6 +217,15 @@
 
 (defrule Fim
   (Jogo (nome ?jogo))
+  (Preco (valor ?preco))
   =>
-  (printout t "O jogo sugerido é: " ?jogo crlf crlf)
+  (printout t crlf crlf)  
+  (printout t "O jogo sugerido é: " ?jogo crlf)
+  (printout t "Preço estimado: " ?preco crlf)
 )
+
+(defrule Titulo
+  (declare (salience 10))
+  =>
+  (printout t crlf crlf)
+  (printout t "Sistema Especialista em Jogos de Cartas e Tabuleiros" crlf crlf))
