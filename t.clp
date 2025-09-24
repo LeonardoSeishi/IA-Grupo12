@@ -101,6 +101,7 @@
     (Preferencias (area_estudo biologicas)))
 	=>
 	(assert (Jogo (nome Damas)))
+    (assert (Preco (valor "R$ 20,00 - R$ 50,00")))
 	(printout t "Jogo sugerido: Damas. Excelente para relaxar e desenvolver raciocínio lógico." crlf )
 )
 
@@ -110,6 +111,7 @@
     (Preferencias (area_estudo exatas)))
 	=>
 	(assert (Jogo (nome Xadrez)))
+    (assert (Preco (valor "R$ 30,00 - R$ 70,00")))
 	(printout t "Jogo sugerido: Xadrez. Um clássico que estimula a mente e a estratégia." crlf)
 )
 
@@ -119,6 +121,7 @@
     (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome PalavraCruzada)))
+    (assert (Preco (valor "R$ 10,00 - R$ 30,00")))
 	(printout t "Jogo sugerido: Palavra Cruzada. Ótimo para exercitar o vocabulário e a mente." crlf)
 )
 
@@ -128,6 +131,7 @@
     (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome Resta1)))
+    (assert (Preco (valor "R$ 20,00 - R$ 40,00")))
 	(printout t "Jogo sugerido: Resta 1. Excelente para relaxar e desenvolver raciocínio lógico." crlf)
 )
 
@@ -138,6 +142,7 @@
       (Preferencias (area_estudo exatas))))
   =>
   (assert (Jogo (nome War)))
+  (assert (Preco (valor "R$ 200,00 - R$ 250,00")))
   (printout t "Jogo sugerido: War. Um clássico de estratégia e conquista." crlf)
 )
 
@@ -149,6 +154,7 @@
         (Preferencias (area_estudo biologicas))))
 	=>
 	(assert (Jogo (nome TheMind)))
+    (assert (Preco (valor "R$ 50,00 - R$ 70,00")))
 	(printout t "Jogo sugerido: The Mind. Um jogo cooperativo que desafia a intuição e a comunicação." crlf)
 )
 
@@ -160,6 +166,7 @@
         (Preferencias (area_estudo biologicas))))
 	=>
 	(assert (Jogo (nome ExplodingKittens)))
+    (assert (Preco (valor "R$ 50,00 - R$ 80,00")))
 	(printout t "Jogo sugerido: Exploding Kittens. Um jogo de cartas para se divertir com amigos." crlf )
 )
 
@@ -169,6 +176,7 @@
     (Preferencias (video_game mortal_kombat)))
 	=>
 	(assert (Jogo (nome Hanabi)))
+    (assert (Preco (valor "R$ 60,00 - R$ 100,00")))
 	(printout t "Jogo sugerido: Hanabi. Explore a cooperação e a comunicação em equipe." crlf)
 )
 
@@ -178,6 +186,7 @@
     (Preferencias (budget baixo)))
 	=>
 	(assert (Jogo (nome Codenames)))
+    (assert (Preco (valor "R$ 60,00 - R$ 100,00")))
 	(printout t "Jogo sugerido: Codenames. Um jogo de palavras e dedução para grupos." crlf)
 )
 
@@ -188,6 +197,7 @@
     (Preferencias (budget alto)))
 	=>
 	(assert (Jogo (nome Operando)))
+    (assert (Preco (valor "R$ 250,00 - R$ 350,00")))
 	(printout t "Jogo sugerido: Operando. Teste sua habilidade e precisão com este jogo clássico." crlf)
 )
 
@@ -198,6 +208,7 @@
     (Preferencias (budget alto)))
 	=>
 	(assert (Jogo (nome Concept)))
+    (assert (Preco (valor "R$ 120,00 - R$ 200,00")))
 	(printout t "Jogo sugerido: Concept. Um jogo de adivinhação baseado em conceitos e associações." crlf)
 )
 
@@ -208,6 +219,7 @@
         (Preferencias (area_estudo exatas))))
 	=>
 	(assert (Jogo (nome Monopoly)))
+    (assert (Preco (valor "R$ 200,00 - R$ 250,00")))
 	(printout t "Jogo sugerido: Monopoly. O clássico jogo de compra e venda de propriedades." crlf)
 )
 
