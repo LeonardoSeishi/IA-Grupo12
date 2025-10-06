@@ -1,197 +1,291 @@
-; ==============================
-; SISTEMA ESPECIALISTA - RECOMENDADOR DE JOGOS
-; ==============================
+; Preferencias do cliente para sugerir um jogo de tabuleiro ;
+
+(deftemplate Preferencias
+    (slot video_game) ; tony_hawk, mario_kart, mortal_kombat, god_of_war
+    (slot ambiente)   ; calmo, animado
+    (slot budget)     ; baixo, alto
+    (slot area_estudo)) ; exatas, humanas, biologicas
 
 (deftemplate Jogo
-  (slot nome)
-  (multislot tipo)
-  (multislot categoria)
-  (multislot participantes)
-  (multislot tempo))
+    (slot nome)
+)
 
-(deftemplate Contexto
-  (slot nome))
+(deftemplate Loja
+    (slot nome)
+    (slot jogo)
+)
 
-(deftemplate Recomendacao
-  (slot jogo)
-  (slot motivo))
+;;; =============================== ;;;
+;;;     Perguntas ao usuario        ;;;
+;;; =============================== ;;;
 
-; ==============================
-; REGRAS PARA PERGUNTAR SOBRE O CONTEXTO
-; ==============================
-
-(defrule titulo
-  (declare (salience 100))
-  =>
-  (printout t crlf)
-  (printout t "==================================" crlf)
-  (printout t "SISTEMA ESPECIALISTA - RECOMENDADOR DE JOGOS" crlf)
-  (printout t "==================================" crlf crlf))
-
-(defrule perguntar-contexto
-  (declare (salience 90))
-  ?phase <- (phase inicio)
-  =>
-  (retract ?phase)
-  (printout t "Para recomendar o jogo ideal, preciso saber o contexto:" crlf)
-  (printout t "1 - Festa/Reuniao com amigos" crlf)
-  (printout t "2 - Encontro rapido (ate 30 min)" crlf)
-  (printout t "3 - Noite de jogos longa (+75 min)" crlf)
-  (printout t "4 - Viagem" crlf)
-  (printout t "5 - Em familia (com crianças)" crlf)
-  (printout t "6 - Jogar sozinho" crlf)
-  (printout t "7 - Sala de espera" crlf)
-  (printout t crlf "Escolha uma opcao (1-7): ")
-  (bind ?resposta (read))
-  (if (or (< ?resposta 1) (> ?resposta 7))
-    then 
-      (printout t "Opcao invalida. Tente novamente." crlf)
-      (assert (phase inicio))
+(defrule GetJogosOnline
+    (declare (salience 10))
+   =>
+    (printout t "Qual seu video game preferido?" crlf)
+    (printout t "1 - Tony Hawk" crlf)
+    (printout t "2 - Mario Kart" crlf)
+    (printout t "3 - Mortal Kombat" crlf)
+    (printout t "4 - God of War" crlf)
+    (printout t "Digite o número da opção: ")
+    (bind ?resposta (read))
+    (if (= ?resposta 1) then
+        (assert (Preferencias (video_game tony_hawk)))
+    else (if (= ?resposta 2) then
+        (assert (Preferencias (video_game mario_kart)))
+    else (if (= ?resposta 3) then
+        (assert (Preferencias (video_game mortal_kombat)))
+    else (if (= ?resposta 4) then
+        (assert (Preferencias (video_game god_of_war)))
     else
-      (bind ?contexto (nth$ (- ?resposta 1) (create$ festa encontros-rapidos encontros-longos viagem familia com-criancas sala-de-espera sozinho)))
-      (assert (Contexto (nome ?contexto)))
-  )
+        (assert (Preferencias (video_game mario_kart)))))))
 )
 
-; ==============================
-; BASE DE CONHECIMENTO - JOGOS
-; ==============================
-
-(defrule inicializar-jogos
-  (declare (salience 80))
-  ?phase <- (phase carregar-jogos)
-  =>
-  (retract ?phase)
-  ; Jogos de festa
-  (assert (Jogo (nome "Uno") (tipo carta) (categoria facil infantil) (participantes 2-3 4-5 6-8 9-10) (tempo rapido)))
-  (assert (Jogo (nome "Dobble") (tipo carta) (categoria facil infantil) (participantes 2-3 4-5 6-8) (tempo rapido)))
-  (assert (Jogo (nome "Codenames") (tipo carta) (categoria facil estrategia cooperativo) (participantes 4-5 6-8 9-10) (tempo rapido)))
-  (assert (Jogo (nome "Spyfall") (tipo carta) (categoria facil cooperativo) (participantes 4-5 6-8 9-10) (tempo rapido)))
-  (assert (Jogo (nome "Black Stories") (tipo carta) (categoria facil cooperativo) (participantes 2-3 4-5 6-8) (tempo rapido)))
-  (assert (Jogo (nome "Taco Gato Cabra Queijo Pizza") (tipo carta) (categoria facil infantil) (participantes 2-3 4-5) (tempo rapido)))
-
-  ; Encontro rápidos
-  (assert (Jogo (nome "Cara a Cara") (tipo tabuleiro) (categoria facil infantil) (participantes 2-3) (tempo rapido)))
-  (assert (Jogo (nome "The Mind") (tipo carta) (categoria facil cooperativo infantil) (participantes 2-3 4-5 6-8 9-10) (tempo rapido)))
-  (assert (Jogo (nome "Exploding Kittens") (tipo carta) (categoria facil) (participantes 2-3 4-5) (tempo rapido)))
-  (assert (Jogo (nome "Dixit") (tipo tabuleiro) (categoria facil) (participantes 2-3 4-5 6-8) (tempo rapido)))
-  
-  ; Encontros longos
-  (assert (Jogo (nome "Catan") (tipo tabuleiro) (categoria estrategia) (participantes 2-3 4-5) (tempo medio)))
-  (assert (Jogo (nome "Terraforming Mars") (tipo tabuleiro) (categoria estrategia) (participantes 2-3 4-5) (tempo longo)))
-  (assert (Jogo (nome "War") (tipo tabuleiro) (categoria estrategia) (participantes 2-3 4-5) (tempo longo)))
-  (assert (Jogo (nome "7 wonders") (tipo tabuleiro) (categoria estrategia) (participantes 4-5 6-8) (tempo medio)))
-  
-  ; Jogos para viagem
-  (assert (Jogo (nome "Hanabi") (tipo carta) (categoria facil cooperativo) (participantes 2-3 4-5) (tempo rapido)))
-  (assert (Jogo (nome "Saboteur") (tipo carta) (categoria facil) (participantes 2-3 4-5 6-8) (tempo rapido)))
-  
-  ; Jogos familia
-
-  ; Jogos com criancas
-  (assert (Jogo (nome "Candy Land") (tipo tabuleiro) (categoria facil infantil) (participantes 2-3 4-5) (tempo rapido)))
-  (assert (Jogo (nome "Operando") (tipo tabuleiro) (categoria facil infantil cooperativo) (participantes 2-3 4-5) (tempo rapido)))
-  
-  ; Jogos em sala de espera
-  (assert (Jogo (nome "Spirit Island") (tipo tabuleiro) (categoria estrategia cooperativo) (participantes 1 2-3 4-5) (tempo longo)))
-  (assert (Jogo (nome "Gloomhaven") (tipo tabuleiro) (categoria estrategia cooperativo) (participantes 1 2-3 4-5) (tempo longo)))
-  
-  ; Jogos solo
-
+(defrule GetAmbiente
+    (declare (salience 9))
+    =>
+    (printout t "Que tipo de ambiente você prefere?" crlf)
+    (printout t "1 - Calmo" crlf)
+    (printout t "2 - Animado" crlf)
+    (printout t "Digite o número da opção: ")
+    (bind ?resposta (read))
+    (if (= ?resposta 1) then
+        (assert (Preferencias (ambiente calmo)))
+    else (if (= ?resposta 2) then
+        (assert (Preferencias (ambiente animado)))
+    else
+        (assert (Preferencias (ambiente calmo)))))
 )
 
-; ==============================
-; REGRAS DE RECOMENDAÇÃO
-; ==============================
-
-; Festa
-(defrule recomendar-festa
-  (Contexto (nome festa))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(member facil ?cat)) (participantes $?part&:(or (member 4-5 ?part) (member 6-8 ?part))) (tempo rapido))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Otimo para festas: facil de aprender, rapido e para grupos medios/grandes"))))
-
-; Encontros rapidos
-(defrule recomendar-rapido
-  (Contexto (nome encontros-rapidos))
-  ?jogo <- (Jogo (nome ?nome) (tempo rapido) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Perfeito para partidas rapidas: jogo curto e ideal para pequenos grupos"))))
-
-; Encontros longos
-(defrule recomendar-longo
-  (Contexto (nome encontros-longos))
-  ?jogo <- (Jogo (nome ?nome) (tempo longo) (categoria $?cat&:(member estrategia ?cat)))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Ideal para noites longas: jogo estrategico e com duracao prolongada"))))
-
-; Viagem
-(defrule recomendar-viagem
-  (Contexto (nome viagem))
-  ?jogo <- (Jogo (nome ?nome) (tipo carta) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Perfeito para viagens: jogo de cartas, portatil e para pequenos grupos"))))
-  
-; Em familia
-(defrule recomendar-familia
-  (Contexto (nome familia))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member infantil ?cat) (member cooperativo ?cat))) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))) (tempo rapido))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Ideal para familia: facil de aprender, cooperativo e rapido"))))
-
-; Jogos com criancas
-(defrule recomendar-criancas
-  (Contexto (nome com-criancas))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member infantil ?cat) (member cooperativo ?cat))) (participantes $?part&:(or (member 2-3 ?part) (member 4-5 ?part))) (tempo rapido))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Ideal para criancas: facil de aprender, cooperativo e rapido"))))
-
-; Sala de espera
-(defrule recomendar-sala-espera
-  (Contexto (nome sala-de-espera))
-  ?jogo <- (Jogo (nome ?nome) (categoria $?cat&:(or (member cooperativo ?cat) (member estrategia ?cat))) (participantes $?part&:(or (member 1 ?part) (member 2-3 ?part) (member 4-5 ?part))) (tempo longo))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Bom para sala de espera: permite jogar sozinho ou em pequenos grupos, com duracao longa"))))
-
-; Jogar sozinho
-(defrule recomendar-sozinho
-  (Contexto (nome sozinho))
-  ?jogo <- (Jogo (nome ?nome) (participantes $?part&:(member 1 ?part)))
-  =>
-  (assert (Recomendacao (jogo ?nome) (motivo "Permite jogar sozinho: modo solo disponivel"))))
-
-; ==============================
-; MOSTRAR RECOMENDAÇÕES
-; ==============================
-
-(defrule mostrar-recomendacoes
-  (declare (salience -10))
-  ?contexto <- (Contexto (nome ?nome-contexto))
-  =>
-  (printout t crlf "==================================" crlf)
-  (printout t "RECOMENDACOES PARA: " ?nome-contexto crlf)
-  (printout t "==================================" crlf crlf)
-  
-  (bind ?recomendacoes (find-all-facts ((?r Recomendacao)) TRUE))
-  
-  (if (> (length ?recomendacoes) 0) then
-    (foreach ?r ?recomendacoes
-      (printout t "Jogo: " (fact-slot-value ?r jogo) crlf)
-      (printout t "Motivo: " (fact-slot-value ?r motivo) crlf)
-      (printout t "---" crlf crlf)
-    )
-  else
-    (printout t "Nenhum jogo encontrado para este contexto." crlf)
-  )
-  
-  (printout t crlf "Fim das recomendacoes." crlf)
+(defrule GetBudget
+    (declare (salience 8))
+    =>
+    (printout t "Quanto você está disposto a gastar?" crlf)
+    (printout t "1 - Baixo" crlf)
+    (printout t "2 - Alto" crlf)
+    (printout t "Digite o número da opção: ")
+    (bind ?resposta (read))
+    (if (= ?resposta 1) then
+        (assert (Preferencias (budget baixo)))
+    else (if (= ?resposta 2) then
+        (assert (Preferencias (budget alto)))
+    else
+        (assert (Preferencias (budget baixo)))))
 )
 
-; ==============================
-; INICIALIZAR SISTEMA
-; ==============================
+(defrule GetAreaEstudos
+    (declare (salience 7))
+    =>
+    (printout t "Qual sua área de estudo?" crlf)
+    (printout t "1 - Exatas" crlf)
+    (printout t "2 - Humanas" crlf)
+    (printout t "3 - Biológicas" crlf)
+    (printout t "Digite o número da opção: ")
+    (bind ?resposta (read))
+    (if (= ?resposta 1) then
+        (assert (Preferencias (area_estudo exatas)))
+    else (if (= ?resposta 2) then
+        (assert (Preferencias (area_estudo humanas)))
+    else (if (= ?resposta 3) then
+        (assert (Preferencias (area_estudo biologicas)))
+    else
+        (assert (Preferencias (area_estudo exatas))))))
+)
 
-(reset)
-(assert (phase inicio))
-(assert (phase carregar-jogos))
-(run)
+;;; =============================== ;;;
+;;;  Regras para escolher o jogo    ;;;
+;;; =============================== ;;;
+
+(defrule Damas
+    (Preferencias (ambiente calmo))
+    (Preferencias (budget baixo))
+    (Preferencias (area_estudo biologicas))
+    =>
+    (assert (Jogo (nome Damas)))
+    (assert (Loja (jogo Damas)))
+    (printout t "Jogo sugerido: Damas. Excelente para relaxar e desenvolver raciocínio lógico." crlf)
+)
+
+(defrule Xadrez
+    (Preferencias (ambiente calmo))
+    (Preferencias (budget baixo))
+    (Preferencias (area_estudo exatas))
+    (Preferencias (video_game mortal_kombat))
+    =>
+    (assert (Jogo (nome Xadrez)))
+    (assert (Loja (jogo Xadrez)))
+    (printout t "Jogo sugerido: Xadrez. Um clássico que estimula a mente e a estratégia." crlf)
+)
+
+(defrule PalavraCruzada
+    (Preferencias (video_game tony_hawk))
+    (Preferencias (ambiente calmo))
+    (Preferencias (budget baixo))
+    =>
+    (assert (Jogo (nome PalavraCruzada)))
+    (assert (Loja (jogo PalavraCruzada)))
+    (printout t "Jogo sugerido: Palavra Cruzada. Ótimo para exercitar o vocabulário e a mente." crlf)
+)
+
+(defrule Resta1
+    (Preferencias (video_game god_of_war))
+    (Preferencias (ambiente calmo))
+    (Preferencias (budget baixo))
+    =>
+    (assert (Jogo (nome Resta1)))
+    (assert (Loja (jogo Resta1)))
+    (printout t "Jogo sugerido: Resta 1. Excelente para relaxar e desenvolver raciocínio lógico." crlf)
+)
+
+(defrule War
+    (Preferencias (video_game god_of_war))
+    (Preferencias (budget alto))
+    (or (Preferencias (area_estudo humanas))
+        (Preferencias (area_estudo exatas)))
+    =>
+    (assert (Jogo (nome War)))
+    (assert (Loja (jogo War)))
+    (printout t "Jogo sugerido: War. Um clássico de estratégia e conquista." crlf)
+)
+
+(defrule TheMind
+    (Preferencias (video_game mario_kart))
+    (Preferencias (ambiente animado))
+    (or (Preferencias (budget baixo))
+        (Preferencias (area_estudo humanas))
+        (Preferencias (area_estudo biologicas)))
+    =>
+    (assert (Jogo (nome TheMind)))
+    (assert (Loja (jogo TheMind)))
+    (printout t "Jogo sugerido: The Mind. Um jogo cooperativo que desafia a intuição e a comunicação." crlf)
+)
+
+(defrule ExplodingKittens
+    (Preferencias (video_game mario_kart))
+    (Preferencias (ambiente animado))
+    (Preferencias (budget baixo))
+    (or (Preferencias (area_estudo humanas))
+        (Preferencias (area_estudo biologicas)))
+    =>
+    (assert (Jogo (nome ExplodingKittens)))
+    (assert (Loja (jogo ExplodingKittens)))
+    (printout t "Jogo sugerido: Exploding Kittens. Um jogo de cartas para se divertir com amigos." crlf)
+)
+
+(defrule Hanabi
+    (Preferencias (ambiente calmo))
+    (Preferencias (area_estudo exatas))
+    (Preferencias (video_game mortal_kombat))
+    =>
+    (assert (Jogo (nome Hanabi)))
+    (assert (Loja (jogo Hanabi)))
+    (printout t "Jogo sugerido: Hanabi. Explore a cooperação e a comunicação em equipe." crlf)
+)
+
+(defrule Codenames
+    (Preferencias (video_game tony_hawk))
+    (Preferencias (ambiente animado))
+    (Preferencias (budget baixo))
+    =>
+    (assert (Jogo (nome Codenames)))
+    (assert (Loja (jogo Codenames)))
+    (printout t "Jogo sugerido: Codenames. Um jogo de palavras e dedução para grupos." crlf)
+)
+
+(defrule Operando
+    (Preferencias (video_game mario_kart))
+    (Preferencias (area_estudo biologicas))
+    (Preferencias (ambiente animado))
+    (Preferencias (budget alto))
+    =>
+    (assert (Jogo (nome Operando)))
+    (assert (Loja (jogo Operando)))
+    (printout t "Jogo sugerido: Operando. Teste sua habilidade e precisão com este jogo clássico." crlf)
+)
+
+(defrule Concept
+    (or (Preferencias (video_game tony_hawk))
+        (Preferencias (area_estudo humanas)))
+    (Preferencias (ambiente animado))
+    (Preferencias (budget alto))
+    =>
+    (assert (Jogo (nome Concept)))
+    (assert (Loja (jogo Concept)))
+    (printout t "Jogo sugerido: Concept. Um jogo de adivinhação baseado em conceitos e associações." crlf)
+)
+
+(defrule Monopoly
+    (Preferencias (budget alto))
+    (Preferencias (ambiente animado))
+    (or (Preferencias (area_estudo humanas))
+        (Preferencias (area_estudo exatas)))
+    =>
+    (assert (Jogo (nome Monopoly)))
+    (assert (Loja (jogo Monopoly)))
+    (printout t "Jogo sugerido: Monopoly. O clássico jogo de compra e venda de propriedades." crlf)
+)
+
+;;; =============================== ;;;
+;;; Mostrar Loja para compra do jogo ;;;
+;;; =============================== ;;;
+
+(defrule CasaDoDado
+    (declare (salience -1))
+    (or (Loja (jogo Damas)) (Loja (jogo Xadrez)))
+    =>
+    (assert (Loja (nome CasaDoDado)))
+    (printout t "Você pode comprar esse jogo na loja Casa do Dado." crlf)
+)
+
+(defrule CasteloDosJogos
+    (declare (salience -1))
+    (or (Loja (jogo PalavraCruzada)) (Loja (jogo Resta1)) (Loja (jogo War)))
+    =>
+    (assert (Loja (nome CasteloDosJogos)))  
+    (printout t "Você pode comprar esse jogo na loja Castelo dos Jogos." crlf)
+)
+
+(defrule TabuleiroMagico
+    (declare (salience -1))
+    (or (Loja (jogo TheMind)) (Loja (jogo ExplodingKittens)) (Loja (jogo Hanabi)))
+    =>
+    (assert (Loja (nome TabuleiroMagico)))
+    (printout t "Você pode comprar esse jogo na loja Tabuleiro Mágico." crlf)
+)
+
+(defrule Ludica
+    (declare (salience -1))
+    (or (Loja (jogo Codenames)) (Loja (jogo Operando)))
+    =>
+    (assert (Loja (nome Ludica)))
+    (printout t "Você pode comprar esse jogo na loja Lúdica." crlf)
+)
+
+(defrule EstrategiaECompanhia
+    (declare (salience -1))
+    (or (Loja (jogo Concept)) (Loja (jogo Monopoly)))
+    =>
+    (assert (Loja (nome EstrategiaECompanhia)))
+    (printout t "Você pode comprar esse jogo na loja Estratégia & Companhia." crlf)
+)
+
+;;; =============================== ;;;
+;;;  Mostrar Resultado Final         ;;;
+;;; =============================== ;;;
+
+(defrule Fim
+    (declare (salience -2))
+    (Jogo (nome ?jogo))
+    (Loja (nome ?loja))
+    =>
+    (printout t crlf "===========================================" crlf)
+    (printout t "RESUMO: O jogo recomendado é " ?jogo crlf)
+    (printout t "Loja para compra: " ?loja crlf)
+    (printout t "===========================================" crlf crlf)
+)
+
+(defrule Titulo
+  (declare (salience -3))
+  =>
+  (printout t crlf crlf)
+  (printout t "Sistema Especialista em Jogos de Cartas e Tabuleiros" crlf crlf))
