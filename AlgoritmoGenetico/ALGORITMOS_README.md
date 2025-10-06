@@ -9,9 +9,16 @@ Este diretório contém a implementação do Algoritmo Genético para o Problema
 
 **Instalação:**
 ```bash
+# Opção 1: Instalação manual
 pip install pygad numpy matplotlib
-```
 
+# Opção 2: Usando requirements.txt (recomendado)
+pip install -r requirements.txt
+
+# Opção 3: Versões mínimas
+pip install -r requirements-minimal.txt
+```
+ 
 ## Como Executar
 
 Para testar o programa, temos arquivos de teste na pasta 'G'. Para executar, pode-se escolher entre as opções:
