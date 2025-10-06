@@ -228,7 +228,7 @@ def run_multiple_instances():
             print(f"Diretório {instance_dir} não encontrado, pulando...")
             continue
             
-        print(f"\n🔍 Testando instâncias do diretório: {instance_dir}")
+        print(f"Testando instâncias do diretório: {instance_dir}")
         print("-" * 60)
         
         instance_files = [f for f in os.listdir(instance_dir) if f.endswith('.txt')]
@@ -254,7 +254,6 @@ def run_multiple_instances():
                     **config
                 )
                 
-                # Executa o algoritmo (sem prints detalhados)
                 results = ga.run()
                 end_time = time.time()
                 
@@ -370,7 +369,7 @@ def run_single_instance(instance_path: str, verbose: bool = True):
         # Carrega a instância
         instance = ETSPInstance(instance_path)
         
-        print(f"📄 Instância carregada: {instance_path}")
+        print(f"Instância carregada: {instance_path}")
         print(f"- {instance.n} clientes")
         print(f"- {instance.m} estações de recarga (ignoradas)")
         print(f"- Total de nós válidos para TSP: {instance.n + 1} (depósito + clientes)")
