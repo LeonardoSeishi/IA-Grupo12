@@ -90,7 +90,7 @@ class ETSPInstance:
                 f"Total nodes: {len(self.nodes)}, Matrix shape: {self.distance_matrix.shape}")
 
 if __name__ == "__main__":
-    instance = ETSPInstance("ETSPTW-Instances/tiny_one_santiago.txt")
+    instance = ETSPInstance("G/n20w120s5/n20w120s5.1.txt")
     
     print(instance)
     print("\nFirst 5 nodes:")

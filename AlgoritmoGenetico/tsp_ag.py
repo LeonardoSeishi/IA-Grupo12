@@ -245,7 +245,7 @@ class TSPGeneticAlgorithm:
 # Exemplo de uso
 if __name__ == "__main__":
     # Carrega a instância
-    instance = ETSPInstance("ETSPTW-Instances/tiny_one_santiago.txt")
+    instance = ETSPInstance("G/n20w120s5/n20w120s5.1.txt")
     
     print("Instância carregada:")
     print(f"- {instance.n} clientes")
