@@ -1,0 +1,6 @@
+instance_file,instance_dir,num_clients,num_stations,best_distance,generations_completed,execution_time,population_size,mutation_rate,crossover_rate,max_generations
+n20w120s5.1.txt,G/n20w120s5,20,4,269.0,31,0.24094796180725098,50,0.1,0.85,100
+n20w120s5.2.txt,G/n20w120s5,20,4,263.0,17,0.14060401916503906,50,0.1,0.85,100
+n20w120s5.3.txt,G/n20w120s5,20,4,273.0,56,0.43622326850891113,50,0.1,0.85,100
+n20w120s5.4.txt,G/n20w120s5,20,4,292.0,58,0.40909552574157715,50,0.1,0.85,100
+n20w120s5.5.txt,G/n20w120s5,20,4,305.0,30,0.2200002670288086,50,0.1,0.85,100

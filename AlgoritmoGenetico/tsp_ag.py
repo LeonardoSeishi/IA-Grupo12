@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import pygad
 from typing import List, Dict
 from instance_reader import ETSPInstance
 
 class TSPGeneticAlgorithm:
     def __init__(self, instance: ETSPInstance, population_size=50, mutation_rate=0.1, crossover_rate=0.8, generations=100):
         """
-        Algoritmo Genético para Problema do Caixeiro Viajante
+        Algoritmo Genético para Problema do Caixeiro Viajante usando PyGAD
         
         Args:
             instance: Instância do ETSP (ignorando estações de recarga)
@@ -33,6 +34,9 @@ class TSPGeneticAlgorithm:
         self.best_fitness_history = []
         self.avg_fitness_history = []
         
+        # PyGAD instance
+        self.ga_instance = None
+        
     def _build_reduced_distance_matrix(self) -> np.ndarray:
         """Constrói matriz de distâncias apenas para depósito e clientes"""
         matrix = np.zeros((self.num_nodes, self.num_nodes))
@@ -45,16 +49,41 @@ class TSPGeneticAlgorithm:
         """Retorna o índice na matriz reduzida para um ID de nó"""
         return self.valid_nodes.index(node_id)
     
-    def create_individual(self) -> List[int]:
-        """Cria um indivíduo (rota) aleatório"""
-        # Pega apenas clientes (exclui depósito que será fixo no início e fim)
-        customers = self.valid_nodes[1:]  # Remove o depósito (0)
-        random.shuffle(customers)
-        return [0] + customers + [0]  # Depósito no início e fim
+    def fitness_function(self, ga_instance, solution, solution_idx):
+        """
+        Função de fitness para PyGAD
+        PyGAD usa permutação dos índices dos clientes (sem depósito)
+        """
+        # Reconstrói a rota completa: depósito + clientes + depósito
+        route = [0] + [self.valid_nodes[int(gene)] for gene in solution] + [0]
+        
+        # Calcula distância total
+        total_distance = 0
+        for i in range(len(route) - 1):
+            from_idx = self._get_node_index(route[i])
+            to_idx = self._get_node_index(route[i + 1])
+            total_distance += self.distance_matrix[from_idx][to_idx]
+        
+        # Retorna fitness (maior é melhor, então usamos o negativo da distância)
+        return -total_distance
     
-    def create_population(self) -> List[List[int]]:
-        """Cria população inicial"""
-        return [self.create_individual() for _ in range(self.population_size)]
+    def on_generation(self, ga_instance):
+        """Callback chamado a cada geração"""
+        generation = ga_instance.generations_completed
+        fitness = ga_instance.best_solution()[1]
+        
+        self.best_fitness_history.append(fitness)
+        
+        # Calcula fitness médio
+        population_fitness = ga_instance.last_generation_fitness
+        avg_fitness = np.mean(population_fitness)
+        self.avg_fitness_history.append(avg_fitness)
+        
+        # Só imprime se verbose estiver ativado
+        if hasattr(self, 'verbose') and self.verbose and generation % 10 == 0:
+            distance = -fitness  # Converte fitness de volta para distância
+            print(f"Geração {generation}: Melhor Fitness = {fitness:.2f}, "
+                  f"Distância = {distance:.2f}")
     
     def calculate_distance(self, route: List[int]) -> float:
         """Calcula distância total de uma rota"""
@@ -65,126 +94,53 @@ class TSPGeneticAlgorithm:
             total_distance += self.distance_matrix[from_idx][to_idx]
         return total_distance
     
-    def fitness_function(self, route: List[int]) -> float:
-        """Função de fitness (maior é melhor)"""
-        total_distance = self.calculate_distance(route)
-        # Usamos o inverso da distância pois queremos minimizar
-        return 1.0 / total_distance if total_distance > 0 else 0
-    
-    def tournament_selection(self, population: List[List[int]], fitness: List[float], k=3) -> List[int]:
-        """Seleção por torneio"""
-        selected = random.sample(list(zip(population, fitness)), k)
-        selected.sort(key=lambda x: x[1], reverse=True)
-        return selected[0][0]
-    
-    def ordered_crossover(self, parent1: List[int], parent2: List[int]) -> List[int]:
-        """Crossover Orderd (OX) para TSP"""
-        if random.random() > self.crossover_rate:
-            return parent1.copy()
-            
-        # Remove depósitos duplicados no final
-        p1 = parent1[1:-1]  # Apenas a parte dos clientes
-        p2 = parent2[1:-1]
-        
-        size = len(p1)
-        start, end = sorted(random.sample(range(size), 2))
-        
-        # Cria filho com segmento do parent1
-        child = [-1] * size
-        child[start:end+1] = p1[start:end+1]
-        
-        # Preenche com elementos do parent2 na ordem
-        pointer = (end + 1) % size
-        for gene in p2:
-            if gene not in child:
-                while child[pointer] != -1:
-                    pointer = (pointer + 1) % size
-                child[pointer] = gene
-        
-        # Adiciona depósito no início e fim
-        return [0] + child + [0]
-    
-    def swap_mutation(self, individual: List[int]) -> List[int]:
-        """Mutação por troca de duas cidades"""
-        if random.random() > self.mutation_rate:
-            return individual.copy()
-            
-        # Trabalha apenas com a parte dos clientes
-        customers = individual[1:-1]
-        if len(customers) < 2:
-            return individual.copy()
-            
-        idx1, idx2 = random.sample(range(len(customers)), 2)
-        customers[idx1], customers[idx2] = customers[idx2], customers[idx1]
-        
-        return [0] + customers + [0]
-    
     def run(self) -> Dict:
-        """Executa o algoritmo genético"""
-        # Inicialização
-        population = self.create_population()
-        best_individual = None
-        best_fitness = -float('inf')
+        """Executa o algoritmo genético usando PyGAD"""
+        if hasattr(self, 'verbose') and self.verbose:
+            print("Executando Algoritmo Genético com PyGAD...")
         
-        print("Executando Algoritmo Genético...")
+        # Número de genes = número de clientes (sem o depósito)
+        num_genes = len(self.valid_nodes) - 1
         
-        for generation in range(self.generations):
-            # Calcula fitness
-            fitness = [self.fitness_function(ind) for ind in population]
-            
-            # Estatísticas
-            current_best_fitness = max(fitness)
-            current_avg_fitness = sum(fitness) / len(fitness)
-            
-            self.best_fitness_history.append(current_best_fitness)
-            self.avg_fitness_history.append(current_avg_fitness)
-            
-            # Atualiza melhor indivíduo
-            if current_best_fitness > best_fitness:
-                best_fitness = current_best_fitness
-                best_individual = population[fitness.index(current_best_fitness)]
-            
-            # Critério de parada opcional (estagnação)
-            if generation > 20 and len(set(self.best_fitness_history[-10:])) == 1:
-                print(f"Parada antecipada na geração {generation} - Estagnação")
-                break
-            
-            # Nova população
-            new_population = []
-            
-            # Elitismo: mantém o melhor
-            new_population.append(best_individual)
-            
-            # Preenche o restante da população
-            while len(new_population) < self.population_size:
-                # Seleção
-                parent1 = self.tournament_selection(population, fitness)
-                parent2 = self.tournament_selection(population, fitness)
-                
-                # Crossover
-                child = self.ordered_crossover(parent1, parent2)
-                
-                # Mutação
-                child = self.swap_mutation(child)
-                
-                new_population.append(child)
-            
-            population = new_population
-            
-            if generation % 10 == 0:
-                print(f"Geração {generation}: Melhor Fitness = {current_best_fitness:.6f}, "
-                      f"Distância = {1.0/current_best_fitness:.2f}")
+        # Espaço de genes: índices dos clientes (1 a n)
+        gene_space = list(range(1, num_genes + 1))
         
-        # Resultados finais
-        best_distance = 1.0 / best_fitness
+        # Configuração do PyGAD
+        self.ga_instance = pygad.GA(
+            num_generations=self.generations,
+            num_parents_mating=int(self.population_size * 0.5),
+            fitness_func=self.fitness_function,
+            sol_per_pop=self.population_size,
+            num_genes=num_genes,
+            gene_space=gene_space,
+            parent_selection_type="tournament",
+            K_tournament=3,
+            crossover_type="single_point",  # PyGAD suporta single_point, two_points, uniform, scattered
+            mutation_type="swap",
+            mutation_probability=self.mutation_rate,
+            on_generation=self.on_generation,
+            gene_type=int,
+            allow_duplicate_genes=False,  # Importante para TSP
+            stop_criteria=["saturate_10"]  # Para na estagnação
+        )
+        
+        # Executa o algoritmo
+        self.ga_instance.run()
+        
+        # Obtém a melhor solução
+        solution, solution_fitness, solution_idx = self.ga_instance.best_solution()
+        
+        # Reconstrói a rota completa
+        best_route = [0] + [self.valid_nodes[int(gene)] for gene in solution] + [0]
+        best_distance = -solution_fitness  # Converte de volta
         
         results = {
-            'best_route': best_individual,
-            'best_fitness': best_fitness,
+            'best_route': best_route,
+            'best_fitness': solution_fitness,
             'best_distance': best_distance,
             'best_fitness_history': self.best_fitness_history,
             'avg_fitness_history': self.avg_fitness_history,
-            'generations_completed': len(self.best_fitness_history)
+            'generations_completed': self.ga_instance.generations_completed
         }
         
         return results
@@ -194,11 +150,15 @@ class TSPGeneticAlgorithm:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
         
         # Plot de convergência
-        ax1.plot(results['best_fitness_history'], label='Melhor Fitness', linewidth=2)
-        ax1.plot(results['avg_fitness_history'], label='Fitness Médio', alpha=0.7)
+        # Como PyGAD usa fitness negativos, vamos converter para distâncias para visualização
+        distances = [-f for f in results['best_fitness_history']]
+        avg_distances = [-f for f in results['avg_fitness_history']]
+        
+        ax1.plot(distances, label='Melhor Distância', linewidth=2)
+        ax1.plot(avg_distances, label='Distância Média', alpha=0.7)
         ax1.set_xlabel('Geração')
-        ax1.set_ylabel('Fitness')
-        ax1.set_title('Convergência do Algoritmo Genético')
+        ax1.set_ylabel('Distância')
+        ax1.set_title('Convergência do Algoritmo Genético (PyGAD)')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
         
@@ -230,42 +190,410 @@ class TSPGeneticAlgorithm:
     
     def print_detailed_results(self, results: Dict):
         """Imprime resultados detalhados"""
-        print("\n" + "="*50)
-        print("RESULTADOS FINAIS - ALGORITMO GENÉTICO")
-        print("="*50)
+        print("\n" + "="*60)
+        print("RESULTADOS FINAIS - ALGORITMO GENÉTICO (PyGAD)")
+        print("="*60)
         print(f"Melhor rota encontrada: {results['best_route']}")
         print(f"Distância total: {results['best_distance']:.2f}")
-        print(f"Fitness da melhor solução: {results['best_fitness']:.6f}")
+        print(f"Fitness da melhor solução: {results['best_fitness']:.2f}")
         print(f"Gerações completadas: {results['generations_completed']}")
         print(f"Número de clientes: {self.instance.n}")
         print(f"Tamanho da população: {self.population_size}")
         print(f"Taxa de mutação: {self.mutation_rate}")
-        print(f"Taxa de crossover: {self.crossover_rate}")
+        print("Operadores utilizados:")
+        print("  - Seleção: Tournament (K=3)")
+        print("  - Crossover: Single Point")
+        print("  - Mutação: Swap Mutation")
+        print("  - Critério de parada: Estagnação por 10 gerações")
+
+def run_multiple_instances():
+    """Executa o algoritmo genético em múltiplas instâncias"""
+    import os
+    import time
+    
+    # Diretórios de instâncias disponíveis
+    instance_dirs = [
+        "G/n20w120s5",
+        "G/n20w120s10", 
+        "G/n20w140s5",
+        "G/n20w140s10",
+        "G/n20w160s5",
+        "G/n20w160s10",
+        "G/n20w180s5",
+        "G/n20w180s10",
+        "G/n20w200s5",
+        "G/n20w200s10"
+    ]
+    
+    # Configurações do algoritmo
+    config = {
+        'population_size': 50,
+        'mutation_rate': 0.1,
+        'crossover_rate': 0.85,
+        'generations': 100
+    }
+    
+    all_results = []
+    total_start_time = time.time()
+    
+    print("="*80)
+    print("TESTE DE MÚLTIPLAS INSTÂNCIAS - ALGORITMO GENÉTICO (PyGAD)")
+    print("="*80)
+    
+    for instance_dir in instance_dirs:
+        if not os.path.exists(instance_dir):
+            print(f"⚠️  Diretório {instance_dir} não encontrado, pulando...")
+            continue
+            
+        print(f"\n🔍 Testando instâncias do diretório: {instance_dir}")
+        print("-" * 60)
+        
+        # Lista todos os arquivos .txt no diretório
+        instance_files = [f for f in os.listdir(instance_dir) if f.endswith('.txt')]
+        instance_files.sort()
+        
+        dir_results = []
+        
+        for instance_file in instance_files:
+            instance_path = os.path.join(instance_dir, instance_file)
+            
+            try:
+                # Carrega a instância
+                instance = ETSPInstance(instance_path)
+                
+                print(f"\n📄 Processando: {instance_file}")
+                print(f"   - Clientes: {instance.n}")
+                print(f"   - Estações de recarga: {instance.m}")
+                
+                # Configura e executa o AG
+                start_time = time.time()
+                ga = TSPGeneticAlgorithm(
+                    instance=instance,
+                    **config
+                )
+                
+                # Executa o algoritmo (sem prints detalhados)
+                results = ga.run()
+                end_time = time.time()
+                
+                # Salva informações da execução
+                instance_result = {
+                    'instance_file': instance_file,
+                    'instance_path': instance_path,
+                    'instance_dir': instance_dir,
+                    'num_clients': instance.n,
+                    'num_stations': instance.m,
+                    'best_distance': results['best_distance'],
+                    'best_route': results['best_route'],
+                    'generations_completed': results['generations_completed'],
+                    'execution_time': end_time - start_time,
+                    'config': config.copy()
+                }
+                
+                dir_results.append(instance_result)
+                all_results.append(instance_result)
+                
+                print(f"   ✅ Distância: {results['best_distance']:.2f}")
+                print(f"   ⏱️  Tempo: {end_time - start_time:.2f}s")
+                print(f"   🔄 Gerações: {results['generations_completed']}")
+                
+            except Exception as e:
+                print(f"   ❌ Erro ao processar {instance_file}: {str(e)}")
+                continue
+        
+        # Estatísticas do diretório
+        if dir_results:
+            distances = [r['best_distance'] for r in dir_results]
+            times = [r['execution_time'] for r in dir_results]
+            
+            print(f"\n📊 Estatísticas do diretório {instance_dir}:")
+            print(f"   - Instâncias processadas: {len(dir_results)}")
+            print(f"   - Melhor distância: {min(distances):.2f}")
+            print(f"   - Pior distância: {max(distances):.2f}")
+            print(f"   - Distância média: {np.mean(distances):.2f} ± {np.std(distances):.2f}")
+            print(f"   - Tempo médio: {np.mean(times):.2f}s ± {np.std(times):.2f}s")
+    
+    total_end_time = time.time()
+    
+    # Relatório final
+    print("\n" + "="*80)
+    print("RELATÓRIO FINAL")
+    print("="*80)
+    
+    if all_results:
+        print(f"📈 Total de instâncias processadas: {len(all_results)}")
+        print(f"⏱️  Tempo total de execução: {total_end_time - total_start_time:.2f}s")
+        
+        all_distances = [r['best_distance'] for r in all_results]
+        all_times = [r['execution_time'] for r in all_results]
+        all_generations = [r['generations_completed'] for r in all_results]
+        
+        print(f"\n🎯 Estatísticas gerais:")
+        print(f"   - Melhor distância global: {min(all_distances):.2f}")
+        print(f"   - Pior distância global: {max(all_distances):.2f}")
+        print(f"   - Distância média global: {np.mean(all_distances):.2f} ± {np.std(all_distances):.2f}")
+        print(f"   - Tempo médio por instância: {np.mean(all_times):.2f}s ± {np.std(all_times):.2f}s")
+        print(f"   - Gerações médias: {np.mean(all_generations):.1f} ± {np.std(all_generations):.1f}")
+        
+        # Top 5 melhores resultados
+        sorted_results = sorted(all_results, key=lambda x: x['best_distance'])
+        print(f"\n🏆 Top 5 melhores resultados:")
+        for i, result in enumerate(sorted_results[:5], 1):
+            print(f"   {i}. {result['instance_file']} - Distância: {result['best_distance']:.2f}")
+            
+        # Salva resultados em arquivo CSV
+        save_results_to_csv(all_results)
+        
+    else:
+        print("❌ Nenhuma instância foi processada com sucesso.")
+
+def save_results_to_csv(results):
+    """Salva os resultados em um arquivo CSV"""
+    import csv
+    from datetime import datetime
+    
+    filename = f"resultados_ag_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    try:
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = [
+                'instance_file', 'instance_dir', 'num_clients', 'num_stations',
+                'best_distance', 'generations_completed', 'execution_time',
+                'population_size', 'mutation_rate', 'crossover_rate', 'max_generations'
+            ]
+            
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            for result in results:
+                row = {
+                    'instance_file': result['instance_file'],
+                    'instance_dir': result['instance_dir'],
+                    'num_clients': result['num_clients'],
+                    'num_stations': result['num_stations'],
+                    'best_distance': result['best_distance'],
+                    'generations_completed': result['generations_completed'],
+                    'execution_time': result['execution_time'],
+                    'population_size': result['config']['population_size'],
+                    'mutation_rate': result['config']['mutation_rate'],
+                    'crossover_rate': result['config']['crossover_rate'],
+                    'max_generations': result['config']['generations']
+                }
+                writer.writerow(row)
+        
+        print(f"💾 Resultados salvos em: {filename}")
+        
+    except Exception as e:
+        print(f"❌ Erro ao salvar CSV: {str(e)}")
+
+def run_single_instance(instance_path: str, verbose: bool = True):
+    """Executa o algoritmo genético em uma única instância"""
+    import os
+    
+    if not os.path.exists(instance_path):
+        print(f"❌ Arquivo não encontrado: {instance_path}")
+        return
+    
+    try:
+        # Carrega a instância
+        instance = ETSPInstance(instance_path)
+        
+        print(f"📄 Instância carregada: {instance_path}")
+        print(f"- {instance.n} clientes")
+        print(f"- {instance.m} estações de recarga (ignoradas)")
+        print(f"- Total de nós válidos para TSP: {instance.n + 1} (depósito + clientes)")
+        
+        # Configura o AG
+        ga = TSPGeneticAlgorithm(
+            instance=instance,
+            population_size=50,
+            mutation_rate=0.1,
+            crossover_rate=0.85,
+            generations=100
+        )
+        
+        # Define verbosidade
+        ga.verbose = verbose
+        
+        # Executa o algoritmo
+        results = ga.run()
+        
+        if verbose:
+            # Plota resultados
+            ga.plot_results(results)
+        
+        # Imprime resultados detalhados
+        ga.print_detailed_results(results)
+        
+        return results
+        
+    except Exception as e:
+        print(f"❌ Erro ao processar {instance_path}: {str(e)}")
+        return None
+
+def run_directory_instances(directory_path: str):
+    """Executa o algoritmo genético em todas as instâncias de um diretório"""
+    import os
+    import time
+    
+    if not os.path.exists(directory_path):
+        print(f"❌ Diretório não encontrado: {directory_path}")
+        return
+    
+    # Lista todos os arquivos .txt no diretório
+    instance_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]
+    
+    if not instance_files:
+        print(f"❌ Nenhum arquivo .txt encontrado em: {directory_path}")
+        return
+    
+    instance_files.sort()
+    
+    print(f"🔍 Testando {len(instance_files)} instâncias do diretório: {directory_path}")
+    print("-" * 70)
+    
+    # Configurações do algoritmo
+    config = {
+        'population_size': 50,
+        'mutation_rate': 0.1,
+        'crossover_rate': 0.85,
+        'generations': 100
+    }
+    
+    results = []
+    total_start_time = time.time()
+    
+    for instance_file in instance_files:
+        instance_path = os.path.join(directory_path, instance_file)
+        
+        try:
+            # Carrega a instância
+            instance = ETSPInstance(instance_path)
+            
+            print(f"\n📄 Processando: {instance_file}")
+            print(f"   - Clientes: {instance.n}")
+            print(f"   - Estações de recarga: {instance.m}")
+            
+            # Configura e executa o AG
+            start_time = time.time()
+            ga = TSPGeneticAlgorithm(
+                instance=instance,
+                **config
+            )
+            
+            # Executa o algoritmo (sem verbosidade)
+            ga.verbose = False
+            result = ga.run()
+            end_time = time.time()
+            
+            # Salva informações da execução
+            instance_result = {
+                'instance_file': instance_file,
+                'instance_path': instance_path,
+                'instance_dir': directory_path,
+                'num_clients': instance.n,
+                'num_stations': instance.m,
+                'best_distance': result['best_distance'],
+                'best_route': result['best_route'],
+                'generations_completed': result['generations_completed'],
+                'execution_time': end_time - start_time,
+                'config': config.copy()
+            }
+            
+            results.append(instance_result)
+            
+            print(f"   ✅ Distância: {result['best_distance']:.2f}")
+            print(f"   ⏱️  Tempo: {end_time - start_time:.2f}s")
+            print(f"   🔄 Gerações: {result['generations_completed']}")
+            
+        except Exception as e:
+            print(f"   ❌ Erro ao processar {instance_file}: {str(e)}")
+            continue
+    
+    total_end_time = time.time()
+    
+    # Estatísticas do diretório
+    if results:
+        distances = [r['best_distance'] for r in results]
+        times = [r['execution_time'] for r in results]
+        generations = [r['generations_completed'] for r in results]
+        
+        print(f"\n" + "="*70)
+        print(f"📊 ESTATÍSTICAS DO DIRETÓRIO: {directory_path}")
+        print("="*70)
+        print(f"📈 Instâncias processadas: {len(results)}")
+        print(f"⏱️  Tempo total: {total_end_time - total_start_time:.2f}s")
+        print(f"🎯 Melhor distância: {min(distances):.2f}")
+        print(f"🎯 Pior distância: {max(distances):.2f}")
+        print(f"🎯 Distância média: {np.mean(distances):.2f} ± {np.std(distances):.2f}")
+        print(f"⏱️  Tempo médio: {np.mean(times):.2f}s ± {np.std(times):.2f}s")
+        print(f"🔄 Gerações médias: {np.mean(generations):.1f} ± {np.std(generations):.1f}")
+        
+        # Top 3 melhores resultados
+        sorted_results = sorted(results, key=lambda x: x['best_distance'])
+        print(f"\n🏆 Top 3 melhores resultados:")
+        for i, result in enumerate(sorted_results[:3], 1):
+            print(f"   {i}. {result['instance_file']} - Distância: {result['best_distance']:.2f}")
+        
+        # Salva resultados em CSV
+        save_results_to_csv(results)
+        
+    return results
+
+def print_help():
+    """Imprime instruções de uso"""
+    print("="*70)
+    print("ALGORITMO GENÉTICO PARA TSP - INSTRUÇÕES DE USO")
+    print("="*70)
+    print("Uso:")
+    print("  python tsp_ag.py                           # Executa todas as instâncias")
+    print("  python tsp_ag.py <arquivo.txt>             # Executa uma instância específica")
+    print("  python tsp_ag.py <diretório>               # Executa todas as instâncias de um diretório")
+    print("  python tsp_ag.py --help                    # Mostra esta ajuda")
+    print()
+    print("Exemplos:")
+    print("  python tsp_ag.py G/n20w120s5/n20w120s5.1.txt    # Instância específica")
+    print("  python tsp_ag.py G/n20w120s5                     # Todas as instâncias do diretório")
+    print("  python tsp_ag.py G/n20w140s10/n20w140s10.3.txt  # Outra instância específica")
+    print()
+    print("Diretórios disponíveis:")
+    import os
+    for dir_name in sorted(os.listdir('G') if os.path.exists('G') else []):
+        if os.path.isdir(f'G/{dir_name}'):
+            print(f"  - G/{dir_name}")
 
 # Exemplo de uso
 if __name__ == "__main__":
-    # Carrega a instância
-    instance = ETSPInstance("G/n20w120s5/n20w120s5.1.txt")
+    import sys
+    import os
     
-    print("Instância carregada:")
-    print(f"- {instance.n} clientes")
-    print(f"- {instance.m} estações de recarga (ignoradas)")
-    print(f"- Total de nós válidos para TSP: {instance.n + 1} (depósito + clientes)")
-    
-    # Configura e executa o AG
-    ga = TSPGeneticAlgorithm(
-        instance=instance,
-        population_size=50,
-        mutation_rate=0.1,
-        crossover_rate=0.85,
-        generations=100
-    )
-    
-    # Executa o algoritmo
-    results = ga.run()
-    
-    # Plota resultados
-    ga.plot_results(results)
-    
-    # Imprime resultados detalhados
-    ga.print_detailed_results(results)
+    # Verifica argumentos da linha de comando
+    if len(sys.argv) == 1:
+        # Sem argumentos: executa todas as instâncias
+        print("Modo de execução: Múltiplas instâncias (todas)")
+        print("Para ver outras opções, use: python tsp_ag.py --help")
+        run_multiple_instances()
+        
+    elif len(sys.argv) == 2:
+        arg = sys.argv[1]
+        
+        if arg in ["--help", "-h", "help"]:
+            print_help()
+            
+        elif os.path.isfile(arg):
+            # Argumento é um arquivo: executa instância única
+            print(f"Modo de execução: Instância única")
+            run_single_instance(arg, verbose=True)
+            
+        elif os.path.isdir(arg):
+            # Argumento é um diretório: executa todas as instâncias do diretório
+            print(f"Modo de execução: Diretório específico")
+            run_directory_instances(arg)
+            
+        else:
+            print(f"❌ Arquivo ou diretório não encontrado: {arg}")
+            print("Use: python tsp_ag.py --help para ver as opções disponíveis")
+            
+    else:
+        print("❌ Muitos argumentos fornecidos")
+        print("Use: python tsp_ag.py --help para ver as opções disponíveis")
