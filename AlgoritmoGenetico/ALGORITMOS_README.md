@@ -18,10 +18,10 @@ Para testar o programa, temos arquivos de teste na pasta 'G'. Para executar, pod
 
 | Comando | Descrição |
 |---------|-----------|
-| `python tsp_ag.py` | Executa todas as instâncias de todos os diretórios |
-| `python tsp_ag.py <arquivo.txt>` | Executa uma instância específica com visualização |
-| `python tsp_ag.py <diretório>` | Executa todas as instâncias de um diretório |
-| `python tsp_ag.py --help` | Mostra instruções de uso |
+| `python3 tsp_ag.py` | Executa todas as instâncias de todos os diretórios |
+| `python3 tsp_ag.py <arquivo.txt>` | Executa uma instância específica com visualização |
+| `python3 tsp_ag.py <diretório>` | Executa todas as instâncias de um diretório |
+| `python3 tsp_ag.py --help` | Mostra instruções de uso |
 
 ## Dependências
 
